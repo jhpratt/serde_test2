@@ -391,7 +391,7 @@ struct DeserializerSeqVisitor<'a, 'de: 'a> {
     end: Token,
 }
 
-impl<'de, 'a> SeqAccess<'de> for DeserializerSeqVisitor<'a, 'de> {
+impl<'de> SeqAccess<'de> for DeserializerSeqVisitor<'_, 'de> {
     type Error = Error;
 
     fn next_element_seed<T>(&mut self, seed: T) -> Result<Option<T::Value>, Error>
@@ -418,7 +418,7 @@ struct DeserializerMapVisitor<'a, 'de: 'a> {
     end: Token,
 }
 
-impl<'de, 'a> MapAccess<'de> for DeserializerMapVisitor<'a, 'de> {
+impl<'de> MapAccess<'de> for DeserializerMapVisitor<'_, 'de> {
     type Error = Error;
 
     fn next_key_seed<K>(&mut self, seed: K) -> Result<Option<K::Value>, Error>
@@ -450,7 +450,7 @@ struct DeserializerEnumVisitor<'a, 'de: 'a> {
     de: &'a mut Deserializer<'de>,
 }
 
-impl<'de, 'a> EnumAccess<'de> for DeserializerEnumVisitor<'a, 'de> {
+impl<'de> EnumAccess<'de> for DeserializerEnumVisitor<'_, 'de> {
     type Error = Error;
     type Variant = Self;
 
@@ -475,7 +475,7 @@ impl<'de, 'a> EnumAccess<'de> for DeserializerEnumVisitor<'a, 'de> {
     }
 }
 
-impl<'de, 'a> VariantAccess<'de> for DeserializerEnumVisitor<'a, 'de> {
+impl<'de> VariantAccess<'de> for DeserializerEnumVisitor<'_, 'de> {
     type Error = Error;
 
     fn unit_variant(self) -> Result<(), Error> {
@@ -591,7 +591,7 @@ impl<'a, 'de> EnumMapVisitor<'a, 'de> {
     }
 }
 
-impl<'de, 'a> MapAccess<'de> for EnumMapVisitor<'a, 'de> {
+impl<'de> MapAccess<'de> for EnumMapVisitor<'_, 'de> {
     type Error = Error;
 
     fn next_key_seed<K>(&mut self, seed: K) -> Result<Option<K::Value>, Error>

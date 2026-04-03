@@ -144,8 +144,10 @@
 //! # }
 //! ```
 
+#![warn(clippy::all, clippy::pedantic)]
 // Ignored clippy lints
 #![allow(
+    clippy::test_attr_in_doctest,
     clippy::float_cmp,
     clippy::needless_doctest_main,
     clippy::needless_lifetimes
