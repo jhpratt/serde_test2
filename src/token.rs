@@ -1,5 +1,6 @@
 use std::fmt::{self, Debug, Display};
 
+#[non_exhaustive]
 #[derive(Copy, Clone, PartialEq, Debug)]
 pub enum Token {
     /// A serialized `bool`.
@@ -47,6 +48,15 @@ pub enum Token {
     /// ```
     I64(i64),
 
+    /// A serialized `i128`.
+    ///
+    /// ```
+    /// # use serde_test2::{assert_tokens, Token};
+    /// #
+    /// assert_tokens(&0i128, &[Token::I128(0)]);
+    /// ```
+    I128(i128),
+
     /// A serialized `u8`.
     ///
     /// ```
@@ -82,6 +92,15 @@ pub enum Token {
     /// assert_tokens(&0u64, &[Token::U64(0)]);
     /// ```
     U64(u64),
+
+    /// A serialized `u128`.
+    ///
+    /// ```
+    /// # use serde_test2::{assert_tokens, Token};
+    /// #
+    /// assert_tokens(&0u128, &[Token::U128(0)]);
+    /// ```
+    U128(u128),
 
     /// A serialized `f32`.
     ///
