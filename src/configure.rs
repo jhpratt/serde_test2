@@ -18,7 +18,7 @@ pub struct Compact<T: ?Sized>(T);
 ///
 /// ```
 /// use serde::{Deserialize, Deserializer, Serialize, Serializer};
-/// use serde_test::{assert_tokens, Configure, Token};
+/// use serde_test2::{assert_tokens, Configure, Token};
 ///
 /// #[derive(Debug, PartialEq)]
 /// struct Example(u8, u8);

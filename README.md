@@ -1,9 +1,4 @@
-# serde\_test &emsp; [![Build Status]][actions] [![Latest Version]][crates.io]
-
-[Build Status]: https://img.shields.io/github/actions/workflow/status/serde-rs/test/ci.yml?branch=master
-[actions]: https://github.com/serde-rs/test/actions?query=branch%3Amaster
-[Latest Version]: https://img.shields.io/crates/v/serde_test.svg
-[crates.io]: https://crates.io/crates/serde\_test
+# serde_test2
 
 This crate provides a convenient concise way to write unit tests for
 implementations of [`Serialize`] and [`Deserialize`].
@@ -28,7 +23,7 @@ Here is an example from the [`linked-hash-map`] crate.
 
 ```rust
 use linked_hash_map::LinkedHashMap;
-use serde_test::{assert_tokens, Token};
+use serde_test2::{assert_tokens, Token};
 
 #[test]
 fn test_ser_de_empty() {

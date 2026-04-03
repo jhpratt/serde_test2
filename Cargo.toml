@@ -1,14 +1,17 @@
 [package]
-name = "serde_test"
+name = "serde_test2"
 version = "1.0.177"
-authors = ["Erick Tryzelaar <erick.tryzelaar@gmail.com>", "David Tolnay <dtolnay@gmail.com>"]
+authors = [
+    "Erick Tryzelaar <erick.tryzelaar@gmail.com>",
+    "David Tolnay <dtolnay@gmail.com>",
+    "Jacob Pratt <jacob@jhpratt.dev>",
+]
 categories = ["development-tools::testing"]
 description = "Token De/Serializer for testing De/Serialize implementations"
-documentation = "https://docs.rs/serde_test"
 edition = "2021"
 keywords = ["serde", "serialization", "testing", "dev-dependencies"]
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/serde-rs/test"
+repository = "https://github.com/jhpratt/serde_test2"
 rust-version = "1.56"
 
 [dependencies]

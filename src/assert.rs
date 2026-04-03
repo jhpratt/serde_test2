@@ -8,7 +8,7 @@ use std::fmt::Debug;
 ///
 /// ```
 /// # use serde_derive::{Deserialize, Serialize};
-/// # use serde_test::{assert_tokens, Token};
+/// # use serde_test2::{assert_tokens, Token};
 /// #
 /// #[derive(Serialize, Deserialize, PartialEq, Debug)]
 /// struct S {
@@ -42,7 +42,7 @@ where
 ///
 /// ```
 /// # use serde_derive::{Deserialize, Serialize};
-/// # use serde_test::{assert_ser_tokens, Token};
+/// # use serde_test2::{assert_ser_tokens, Token};
 /// #
 /// #[derive(Serialize, Deserialize, PartialEq, Debug)]
 /// struct S {
@@ -84,7 +84,7 @@ where
 ///
 /// ```
 /// use serde_derive::Serialize;
-/// use serde_test::{assert_ser_tokens_error, Token};
+/// use serde_test2::{assert_ser_tokens_error, Token};
 /// use std::sync::{Arc, Mutex};
 /// use std::thread;
 ///
@@ -141,7 +141,7 @@ where
 ///
 /// ```
 /// # use serde_derive::{Deserialize, Serialize};
-/// # use serde_test::{assert_de_tokens, Token};
+/// # use serde_test2::{assert_de_tokens, Token};
 /// #
 /// #[derive(Serialize, Deserialize, PartialEq, Debug)]
 /// struct S {
@@ -198,7 +198,7 @@ where
 ///
 /// ```
 /// # use serde_derive::{Deserialize, Serialize};
-/// # use serde_test::{assert_de_tokens_error, Token};
+/// # use serde_test2::{assert_de_tokens_error, Token};
 /// #
 /// #[derive(Serialize, Deserialize, PartialEq, Debug)]
 /// #[serde(deny_unknown_fields)]

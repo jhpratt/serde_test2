@@ -6,7 +6,7 @@
 //!
 //! The `Serialize` impl for a value can be characterized by the sequence of
 //! [`Serializer`] calls that are made in the course of serializing the value,
-//! so `serde_test` provides a [`Token`] abstraction which corresponds roughly
+//! so `serde_test2` provides a [`Token`] abstraction which corresponds roughly
 //! to `Serializer` method calls. There is an [`assert_ser_tokens`] function to
 //! test that a value serializes to a particular sequence of method calls, an
 //! [`assert_de_tokens`] function to test that a value can be deserialized from
@@ -24,7 +24,7 @@
 //! # const IGNORE: &str = stringify! {
 //! use linked_hash_map::LinkedHashMap;
 //! # };
-//! use serde_test::{assert_tokens, Token};
+//! use serde_test2::{assert_tokens, Token};
 //!
 //! # use std::fmt;
 //! # use std::marker::PhantomData;
@@ -144,7 +144,6 @@
 //! # }
 //! ```
 
-#![doc(html_root_url = "https://docs.rs/serde_test/1.0.177")]
 // Ignored clippy lints
 #![allow(
     clippy::float_cmp,
