@@ -231,6 +231,7 @@ pub enum Token {
     ///     &a,
     ///     &[Token::UnitVariant {
     ///         name: "E",
+    ///         variant_index: 0,
     ///         variant: "A",
     ///     }],
     /// );
@@ -238,6 +239,7 @@ pub enum Token {
     /// ```
     UnitVariant {
         name: &'static str,
+        variant_index: u32,
         variant: &'static str,
     },
 

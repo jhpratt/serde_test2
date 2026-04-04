@@ -185,7 +185,7 @@ impl<'s, 'a> ser::Serializer for &'s mut Serializer<'a> {
     fn serialize_unit_variant(
         self,
         name: &'static str,
-        _variant_index: u32,
+        variant_index: u32,
         variant: &'static str,
     ) -> Result<(), Error> {
         if self.tokens.first() == Some(&Token::Enum { name }) {
@@ -193,7 +193,14 @@ impl<'s, 'a> ser::Serializer for &'s mut Serializer<'a> {
             assert_next_token!(self, Str(variant));
             assert_next_token!(self, Unit);
         } else {
-            assert_next_token!(self, UnitVariant { name, variant });
+            assert_next_token!(
+                self,
+                UnitVariant {
+                    name,
+                    variant_index,
+                    variant
+                }
+            );
         }
         Ok(())
     }
