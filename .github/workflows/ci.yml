@@ -25,12 +25,9 @@ jobs:
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{matrix.rust}}
+      - uses: Swatinem/rust-cache@v2
       - run: cargo build
       - run: cargo test --features serde/derive,serde/rc
-      - uses: actions/upload-artifact@v7
-        with:
-          name: Cargo.lock
-          path: Cargo.lock
         continue-on-error: true
 
   minimal:
