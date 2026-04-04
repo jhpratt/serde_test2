@@ -144,20 +144,17 @@
 //! # }
 //! ```
 
-#![warn(clippy::all, clippy::pedantic)]
-// Ignored clippy lints
+#![warn(clippy::all, clippy::pedantic, unreachable_pub)]
 #![allow(
     clippy::test_attr_in_doctest,
     clippy::float_cmp,
     clippy::needless_doctest_main,
-    clippy::needless_lifetimes
-)]
-// Ignored clippy_pedantic lints
-#![allow(
+    clippy::needless_lifetimes,
     clippy::manual_assert,
     clippy::missing_panics_doc,
     clippy::module_name_repetitions,
-    clippy::too_many_lines
+    clippy::too_many_lines,
+    clippy::redundant_pub_crate
 )]
 
 mod assert;

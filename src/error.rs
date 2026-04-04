@@ -3,13 +3,13 @@ use std::error;
 use std::fmt::{self, Display};
 
 #[derive(Clone, Debug)]
-pub struct Error {
+pub(crate) struct Error {
     msg: String,
 }
 
 impl ser::Error for Error {
     fn custom<T: Display>(msg: T) -> Self {
-        Error {
+        Self {
             msg: msg.to_string(),
         }
     }
@@ -17,7 +17,7 @@ impl ser::Error for Error {
 
 impl de::Error for Error {
     fn custom<T: Display>(msg: T) -> Self {
-        Error {
+        Self {
             msg: msg.to_string(),
         }
     }

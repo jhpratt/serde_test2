@@ -8,7 +8,7 @@ use serde::de::{
 use serde::forward_to_deserialize_any;
 
 #[derive(Debug)]
-pub struct Deserializer<'de> {
+pub(crate) struct Deserializer<'de> {
     tokens: &'de [Token],
 }
 
@@ -38,7 +38,7 @@ fn end_of_tokens() -> Error {
 }
 
 impl<'de> Deserializer<'de> {
-    pub fn new(tokens: &'de [Token]) -> Self {
+    pub(crate) fn new(tokens: &'de [Token]) -> Self {
         Deserializer { tokens }
     }
 
@@ -50,7 +50,7 @@ impl<'de> Deserializer<'de> {
         self.peek_token_opt().ok_or_else(end_of_tokens)
     }
 
-    pub fn next_token_opt(&mut self) -> Option<Token> {
+    pub(crate) fn next_token_opt(&mut self) -> Option<Token> {
         match self.tokens.split_first() {
             Some((&first, rest)) => {
                 self.tokens = rest;
@@ -66,7 +66,7 @@ impl<'de> Deserializer<'de> {
         Ok(first)
     }
 
-    pub fn remaining(&self) -> usize {
+    pub(crate) fn remaining(&self) -> usize {
         self.tokens.len()
     }
 

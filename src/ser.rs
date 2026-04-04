@@ -5,13 +5,13 @@ use serde::ser::{self, Serialize};
 /// A `Serializer` that ensures that a value serializes to a given list of
 /// tokens.
 #[derive(Debug)]
-pub struct Serializer<'a> {
+pub(crate) struct Serializer<'a> {
     tokens: &'a [Token],
 }
 
 impl<'a> Serializer<'a> {
     /// Creates the serializer.
-    pub fn new(tokens: &'a [Token]) -> Self {
+    pub(crate) fn new(tokens: &'a [Token]) -> Self {
         Serializer { tokens }
     }
 
@@ -25,7 +25,7 @@ impl<'a> Serializer<'a> {
         }
     }
 
-    pub fn remaining(&self) -> usize {
+    pub(crate) fn remaining(&self) -> usize {
         self.tokens.len()
     }
 }
@@ -328,7 +328,7 @@ impl<'s, 'a> ser::Serializer for &'s mut Serializer<'a> {
     }
 }
 
-pub struct Variant<'s, 'a: 's> {
+pub(crate) struct Variant<'s, 'a: 's> {
     ser: &'s mut Serializer<'a>,
     end: Token,
 }
