@@ -1,5 +1,7 @@
 use std::fmt::{self, Debug, Display};
 
+use serde::de::Unexpected;
+
 #[non_exhaustive]
 #[derive(Copy, Clone, PartialEq, Debug)]
 pub enum Token {
@@ -578,5 +580,47 @@ pub enum Token {
 impl Display for Token {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         Debug::fmt(self, formatter)
+    }
+}
+
+impl Token {
+    pub(crate) fn into_unexpected(self) -> Unexpected<'static> {
+        match self {
+            Token::Bool(val) => Unexpected::Bool(val),
+            Token::I8(val) => Unexpected::Signed(val.into()),
+            Token::I16(val) => Unexpected::Signed(val.into()),
+            Token::I32(val) => Unexpected::Signed(val.into()),
+            Token::I64(val) => Unexpected::Signed(val),
+            Token::I128(_) | Token::U128(_) => Unexpected::Other("integer"),
+            Token::U8(val) => Unexpected::Unsigned(val.into()),
+            Token::U16(val) => Unexpected::Unsigned(val.into()),
+            Token::U32(val) => Unexpected::Unsigned(val.into()),
+            Token::U64(val) => Unexpected::Unsigned(val),
+            Token::F32(val) => Unexpected::Float(val.into()),
+            Token::F64(val) => Unexpected::Float(val),
+            Token::Char(val) => Unexpected::Char(val),
+            Token::Str(val) | Token::BorrowedStr(val) | Token::String(val) => Unexpected::Str(val),
+            Token::Bytes(val) | Token::BorrowedBytes(val) | Token::ByteBuf(val) => {
+                Unexpected::Bytes(val)
+            }
+            Token::None | Token::Some => Unexpected::Option,
+            Token::Unit | Token::UnitStruct { .. } => Unexpected::Unit,
+            Token::UnitVariant { .. } => Unexpected::UnitVariant,
+            Token::NewtypeStruct { .. } => Unexpected::NewtypeStruct,
+            Token::NewtypeVariant { .. } => Unexpected::NewtypeVariant,
+            Token::Seq { .. }
+            | Token::Struct { .. }
+            | Token::Tuple { .. }
+            | Token::TupleStruct { .. } => Unexpected::Seq,
+            Token::SeqEnd | Token::TupleEnd | Token::TupleStructEnd => todo!(),
+            Token::TupleVariant { .. } => Unexpected::TupleVariant,
+            Token::TupleVariantEnd => todo!(),
+            Token::Map { .. } => Unexpected::Map,
+            Token::MapEnd => todo!(),
+            Token::StructEnd => todo!(),
+            Token::StructVariant { .. } => Unexpected::StructVariant,
+            Token::StructVariantEnd => todo!(),
+            Token::Enum { .. } => Unexpected::Enum,
+        }
     }
 }

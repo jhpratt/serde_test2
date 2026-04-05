@@ -1,11 +1,12 @@
+use std::fmt::Display;
+
 use crate::error::Error;
 use crate::token::Token;
 use serde::de::value::{MapAccessDeserializer, SeqAccessDeserializer};
 use serde::de::{
-    self, Deserialize, DeserializeSeed, EnumAccess, IntoDeserializer, MapAccess, SeqAccess,
-    VariantAccess, Visitor,
+    self, Deserialize, DeserializeSeed, EnumAccess, Error as _, IntoDeserializer, MapAccess,
+    SeqAccess, VariantAccess, Visitor,
 };
-use serde::forward_to_deserialize_any;
 
 #[derive(Debug)]
 pub(crate) struct Deserializer<'de> {
@@ -31,6 +32,46 @@ fn unexpected(token: Token) -> Error {
         "deserialization did not expect this token: {}",
         token,
     ))
+}
+
+fn assert_name_eq(expected: impl Display, actual: impl Display) -> Result<(), Error> {
+    let expected = expected.to_string();
+    let actual = actual.to_string();
+
+    if expected == actual {
+        Ok(())
+    } else {
+        Err(de::Error::custom(format!(
+            "expected name `{}` but got `{}`",
+            expected, actual
+        )))
+    }
+}
+
+fn assert_len_eq(expected: usize, actual: usize) -> Result<(), Error> {
+    if expected == actual {
+        Ok(())
+    } else {
+        Err(de::Error::custom(format!(
+            "expected length {} but got {}",
+            expected, actual
+        )))
+    }
+}
+
+fn assert_contains(expected: &[impl Display], actual: impl Display) -> Result<(), Error> {
+    let expected = expected.iter().map(ToString::to_string).collect::<Vec<_>>();
+    let actual = actual.to_string();
+
+    if expected.contains(&actual) {
+        Ok(())
+    } else {
+        Err(de::Error::custom(format!(
+            "expected one of [{}] but got `{}`",
+            expected.join(", "),
+            actual
+        )))
+    }
 }
 
 fn end_of_tokens() -> Error {
@@ -101,11 +142,6 @@ impl<'de> Deserializer<'de> {
 
 impl<'de> de::Deserializer<'de> for &mut Deserializer<'de> {
     type Error = Error;
-
-    forward_to_deserialize_any! {
-        bool i8 i16 i32 i64 i128 u8 u16 u32 u64 u128 f32 f64 char str string
-        bytes byte_buf unit seq map identifier ignored_any
-    }
 
     fn deserialize_any<V>(self, visitor: V) -> Result<V::Value, Error>
     where
@@ -224,43 +260,48 @@ impl<'de> de::Deserializer<'de> for &mut Deserializer<'de> {
     where
         V: Visitor<'de>,
     {
-        match self.peek_token()? {
-            Token::Unit | Token::None => {
-                self.next_token()?;
-                visitor.visit_none()
-            }
-            Token::Some => {
-                self.next_token()?;
-                visitor.visit_some(self)
-            }
-            _ => self.deserialize_any(visitor),
+        match self.next_token()? {
+            Token::Unit | Token::None => visitor.visit_none(),
+            Token::Some => visitor.visit_some(self),
+            token => Err(de::Error::invalid_type(token.into_unexpected(), &visitor)),
         }
     }
 
     fn deserialize_enum<V>(
         self,
         name: &'static str,
-        _variants: &'static [&'static str],
+        variants: &'static [&'static str],
         visitor: V,
     ) -> Result<V::Value, Error>
     where
         V: Visitor<'de>,
     {
         match self.peek_token()? {
-            Token::Enum { name: n } if name == n => {
-                self.next_token()?;
-
+            Token::Enum { name: n } => {
+                assert_name_eq(name, n)?;
                 visitor.visit_enum(DeserializerEnumVisitor { de: self })
             }
-            Token::UnitVariant { name: n, .. }
-            | Token::NewtypeVariant { name: n, .. }
-            | Token::TupleVariant { name: n, .. }
-            | Token::StructVariant { name: n, .. }
-                if name == n =>
-            {
+            Token::UnitVariant {
+                name: n,
+                variant_index: _,
+                variant,
+            }
+            | Token::NewtypeVariant { name: n, variant }
+            | Token::TupleVariant {
+                name: n,
+                variant,
+                len: _,
+            }
+            | Token::StructVariant {
+                name: n,
+                variant,
+                len: _,
+            } => {
+                assert_name_eq(name, n)?;
+                assert_contains(variants, variant)?;
                 visitor.visit_enum(DeserializerEnumVisitor { de: self })
             }
-            _ => self.deserialize_any(visitor),
+            token => Err(de::Error::invalid_type(token.into_unexpected(), &visitor)),
         }
     }
 
@@ -268,12 +309,12 @@ impl<'de> de::Deserializer<'de> for &mut Deserializer<'de> {
     where
         V: Visitor<'de>,
     {
-        match self.peek_token()? {
-            Token::UnitStruct { .. } => {
-                assert_next_token(self, Token::UnitStruct { name })?;
+        match self.next_token()? {
+            Token::UnitStruct { name: n } => {
+                assert_name_eq(name, n)?;
                 visitor.visit_unit()
             }
-            _ => self.deserialize_any(visitor),
+            token => Err(de::Error::invalid_type(token.into_unexpected(), &visitor)),
         }
     }
 
@@ -285,12 +326,12 @@ impl<'de> de::Deserializer<'de> for &mut Deserializer<'de> {
     where
         V: Visitor<'de>,
     {
-        match self.peek_token()? {
-            Token::NewtypeStruct { .. } => {
-                assert_next_token(self, Token::NewtypeStruct { name })?;
+        match self.next_token()? {
+            Token::NewtypeStruct { name: n } => {
+                assert_name_eq(name, n)?;
                 visitor.visit_newtype_struct(self)
             }
-            _ => self.deserialize_any(visitor),
+            token => Err(de::Error::invalid_type(token.into_unexpected(), &visitor)),
         }
     }
 
@@ -298,24 +339,12 @@ impl<'de> de::Deserializer<'de> for &mut Deserializer<'de> {
     where
         V: Visitor<'de>,
     {
-        match self.peek_token()? {
-            Token::Unit | Token::UnitStruct { .. } => {
-                self.next_token()?;
-                visitor.visit_unit()
-            }
-            Token::Seq { .. } => {
-                self.next_token()?;
-                self.visit_seq(Some(len), Token::SeqEnd, visitor)
-            }
-            Token::Tuple { .. } => {
-                self.next_token()?;
-                self.visit_seq(Some(len), Token::TupleEnd, visitor)
-            }
-            Token::TupleStruct { .. } => {
-                self.next_token()?;
-                self.visit_seq(Some(len), Token::TupleStructEnd, visitor)
-            }
-            _ => self.deserialize_any(visitor),
+        match self.next_token()? {
+            Token::Unit | Token::UnitStruct { .. } => visitor.visit_unit(),
+            Token::Seq { .. } => self.visit_seq(Some(len), Token::SeqEnd, visitor),
+            Token::Tuple { .. } => self.visit_seq(Some(len), Token::TupleEnd, visitor),
+            Token::TupleStruct { .. } => self.visit_seq(Some(len), Token::TupleStructEnd, visitor),
+            token => Err(de::Error::invalid_type(token.into_unexpected(), &visitor)),
         }
     }
 
@@ -328,28 +357,28 @@ impl<'de> de::Deserializer<'de> for &mut Deserializer<'de> {
     where
         V: Visitor<'de>,
     {
-        match self.peek_token()? {
-            Token::Unit => {
-                self.next_token()?;
+        match self.next_token()? {
+            Token::Unit => visitor.visit_unit(),
+            Token::UnitStruct { name: n } => {
+                assert_name_eq(name, n)?;
                 visitor.visit_unit()
             }
-            Token::UnitStruct { .. } => {
-                assert_next_token(self, Token::UnitStruct { name })?;
-                visitor.visit_unit()
-            }
-            Token::Seq { .. } => {
-                self.next_token()?;
+            Token::Seq { len: l } => {
+                if let Some(enum_len) = l {
+                    assert_len_eq(len, enum_len)?;
+                }
                 self.visit_seq(Some(len), Token::SeqEnd, visitor)
             }
-            Token::Tuple { .. } => {
-                self.next_token()?;
+            Token::Tuple { len: l } => {
+                assert_len_eq(len, l)?;
                 self.visit_seq(Some(len), Token::TupleEnd, visitor)
             }
-            Token::TupleStruct { len: n, .. } => {
-                assert_next_token(self, Token::TupleStruct { name, len: n })?;
+            Token::TupleStruct { name: n, len: l } => {
+                assert_name_eq(name, n)?;
+                assert_len_eq(len, l)?;
                 self.visit_seq(Some(len), Token::TupleStructEnd, visitor)
             }
-            _ => self.deserialize_any(visitor),
+            token => Err(de::Error::invalid_type(token.into_unexpected(), &visitor)),
         }
     }
 
@@ -362,17 +391,261 @@ impl<'de> de::Deserializer<'de> for &mut Deserializer<'de> {
     where
         V: Visitor<'de>,
     {
-        match self.peek_token()? {
-            Token::Struct { len: n, .. } => {
-                assert_next_token(self, Token::Struct { name, len: n })?;
+        match self.next_token()? {
+            Token::Struct { name: n, len } => {
+                assert_name_eq(name, n)?;
+                assert_len_eq(fields.len(), len)?;
                 self.visit_map(Some(fields.len()), Token::StructEnd, visitor)
             }
-            Token::Map { .. } => {
-                self.next_token()?;
+            Token::Map { len } => {
+                if let Some(enum_len) = len {
+                    assert_len_eq(fields.len(), enum_len)?;
+                }
                 self.visit_map(Some(fields.len()), Token::MapEnd, visitor)
             }
-            _ => self.deserialize_any(visitor),
+            token => Err(de::Error::invalid_type(token.into_unexpected(), &visitor)),
         }
+    }
+
+    fn deserialize_bool<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
+    {
+        match self.next_token()? {
+            Token::Bool(v) => visitor.visit_bool(v),
+            token => Err(de::Error::invalid_type(token.into_unexpected(), &visitor)),
+        }
+    }
+
+    fn deserialize_i8<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
+    {
+        match self.next_token()? {
+            Token::I8(v) => visitor.visit_i8(v),
+            token => Err(de::Error::invalid_type(token.into_unexpected(), &visitor)),
+        }
+    }
+
+    fn deserialize_i16<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
+    {
+        match self.next_token()? {
+            Token::I16(v) => visitor.visit_i16(v),
+            token => Err(de::Error::invalid_type(token.into_unexpected(), &visitor)),
+        }
+    }
+
+    fn deserialize_i32<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
+    {
+        match self.next_token()? {
+            Token::I32(v) => visitor.visit_i32(v),
+            token => Err(de::Error::invalid_type(token.into_unexpected(), &visitor)),
+        }
+    }
+
+    fn deserialize_i64<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
+    {
+        match self.next_token()? {
+            Token::I64(v) => visitor.visit_i64(v),
+            token => Err(de::Error::invalid_type(token.into_unexpected(), &visitor)),
+        }
+    }
+
+    fn deserialize_i128<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
+    {
+        match self.next_token()? {
+            Token::I128(v) => visitor.visit_i128(v),
+            token => Err(de::Error::invalid_type(token.into_unexpected(), &visitor)),
+        }
+    }
+
+    fn deserialize_u8<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
+    {
+        match self.next_token()? {
+            Token::U8(v) => visitor.visit_u8(v),
+            token => Err(de::Error::invalid_type(token.into_unexpected(), &visitor)),
+        }
+    }
+
+    fn deserialize_u16<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
+    {
+        match self.next_token()? {
+            Token::U16(v) => visitor.visit_u16(v),
+            token => Err(de::Error::invalid_type(token.into_unexpected(), &visitor)),
+        }
+    }
+
+    fn deserialize_u32<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
+    {
+        match self.next_token()? {
+            Token::U32(v) => visitor.visit_u32(v),
+            token => Err(de::Error::invalid_type(token.into_unexpected(), &visitor)),
+        }
+    }
+
+    fn deserialize_u64<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
+    {
+        match self.next_token()? {
+            Token::U64(v) => visitor.visit_u64(v),
+            token => Err(de::Error::invalid_type(token.into_unexpected(), &visitor)),
+        }
+    }
+
+    fn deserialize_u128<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
+    {
+        match self.next_token()? {
+            Token::U128(v) => visitor.visit_u128(v),
+            token => Err(de::Error::invalid_type(token.into_unexpected(), &visitor)),
+        }
+    }
+
+    fn deserialize_f32<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
+    {
+        match self.next_token()? {
+            Token::F32(v) => visitor.visit_f32(v),
+            token => Err(de::Error::invalid_type(token.into_unexpected(), &visitor)),
+        }
+    }
+
+    fn deserialize_f64<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
+    {
+        match self.next_token()? {
+            Token::F64(v) => visitor.visit_f64(v),
+            token => Err(de::Error::invalid_type(token.into_unexpected(), &visitor)),
+        }
+    }
+
+    fn deserialize_char<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
+    {
+        match self.next_token()? {
+            Token::Char(v) => visitor.visit_char(v),
+            token => Err(de::Error::invalid_type(token.into_unexpected(), &visitor)),
+        }
+    }
+
+    fn deserialize_str<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
+    {
+        match self.next_token()? {
+            Token::Str(v) => visitor.visit_str(v),
+            Token::BorrowedStr(v) => visitor.visit_borrowed_str(v),
+            Token::String(v) => visitor.visit_string(v.to_owned()),
+            token => Err(de::Error::invalid_type(token.into_unexpected(), &visitor)),
+        }
+    }
+
+    fn deserialize_string<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
+    {
+        match self.next_token()? {
+            Token::Str(v) => visitor.visit_str(v),
+            Token::BorrowedStr(v) => visitor.visit_borrowed_str(v),
+            Token::String(v) => visitor.visit_string(v.to_owned()),
+            token => Err(de::Error::invalid_type(token.into_unexpected(), &visitor)),
+        }
+    }
+
+    fn deserialize_bytes<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
+    {
+        match self.next_token()? {
+            Token::Bytes(v) => visitor.visit_bytes(v),
+            Token::BorrowedBytes(v) => visitor.visit_borrowed_bytes(v),
+            Token::ByteBuf(v) => visitor.visit_byte_buf(v.to_vec()),
+            token => Err(de::Error::invalid_type(token.into_unexpected(), &visitor)),
+        }
+    }
+
+    fn deserialize_byte_buf<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
+    {
+        match self.next_token()? {
+            Token::Bytes(v) => visitor.visit_bytes(v),
+            Token::BorrowedBytes(v) => visitor.visit_borrowed_bytes(v),
+            Token::ByteBuf(v) => visitor.visit_byte_buf(v.to_vec()),
+            token => Err(de::Error::invalid_type(token.into_unexpected(), &visitor)),
+        }
+    }
+
+    fn deserialize_unit<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
+    {
+        match self.next_token()? {
+            Token::Unit => visitor.visit_unit(),
+            token => Err(de::Error::invalid_type(token.into_unexpected(), &visitor)),
+        }
+    }
+
+    fn deserialize_seq<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
+    {
+        match self.next_token()? {
+            Token::Seq { len } => self.visit_seq(len, Token::SeqEnd, visitor),
+            token => Err(de::Error::invalid_type(token.into_unexpected(), &visitor)),
+        }
+    }
+
+    fn deserialize_map<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
+    {
+        match self.next_token()? {
+            Token::Map { len } => self.visit_map(len, Token::MapEnd, visitor),
+            token => Err(de::Error::invalid_type(token.into_unexpected(), &visitor)),
+        }
+    }
+
+    fn deserialize_identifier<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
+    {
+        match self.next_token()? {
+            Token::Str(v) => visitor.visit_str(v),
+            Token::BorrowedStr(v) => visitor.visit_borrowed_str(v),
+            Token::String(v) => visitor.visit_string(v.to_owned()),
+            Token::U8(v) => visitor.visit_u8(v),
+            Token::U16(v) => visitor.visit_u16(v),
+            Token::U32(v) => visitor.visit_u32(v),
+            Token::U64(v) => visitor.visit_u64(v),
+            token => Err(de::Error::invalid_type(token.into_unexpected(), &visitor)),
+        }
+    }
+
+    fn deserialize_ignored_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
+    {
+        self.deserialize_any(visitor)
     }
 
     fn is_human_readable(&self) -> bool {
@@ -446,6 +719,7 @@ impl<'de> MapAccess<'de> for DeserializerMapVisitor<'_, 'de> {
 
 //////////////////////////////////////////////////////////////////////////
 
+#[derive(Debug)]
 struct DeserializerEnumVisitor<'a, 'de: 'a> {
     de: &'a mut Deserializer<'de>,
 }
@@ -466,6 +740,38 @@ impl<'de> EnumAccess<'de> for DeserializerEnumVisitor<'_, 'de> {
                 let de = v.into_deserializer();
                 let value = seed.deserialize(de)?;
                 Ok((value, self))
+            }
+            Token::Enum { .. } => {
+                // Consume the `Enum` header and deserialize the following variant identifier token
+                // as the variant seed expects.
+                self.de.next_token()?; // consume Token::Enum
+                match self.de.next_token()? {
+                    Token::Str(v) | Token::BorrowedStr(v) | Token::String(v) => {
+                        let value = seed.deserialize(v.into_deserializer())?;
+                        Ok((value, self))
+                    }
+                    Token::Bytes(v) | Token::BorrowedBytes(v) | Token::ByteBuf(v) => {
+                        let value = seed.deserialize(BytesDeserializer { value: v })?;
+                        Ok((value, self))
+                    }
+                    Token::U8(v) => {
+                        let value = seed.deserialize(v.into_deserializer())?;
+                        Ok((value, self))
+                    }
+                    Token::U16(v) => {
+                        let value = seed.deserialize(v.into_deserializer())?;
+                        Ok((value, self))
+                    }
+                    Token::U32(v) => {
+                        let value = seed.deserialize(v.into_deserializer())?;
+                        Ok((value, self))
+                    }
+                    Token::U64(v) => {
+                        let value = seed.deserialize(v.into_deserializer())?;
+                        Ok((value, self))
+                    }
+                    other => Err(unexpected(other)),
+                }
             }
             _ => {
                 let value = seed.deserialize(&mut *self.de)?;
@@ -505,29 +811,19 @@ impl<'de> VariantAccess<'de> for DeserializerEnumVisitor<'_, 'de> {
     where
         V: Visitor<'de>,
     {
-        match self.de.peek_token()? {
+        match self.de.next_token()? {
             Token::TupleVariant { len: enum_len, .. } => {
-                let token = self.de.next_token()?;
-
-                if len == enum_len {
-                    self.de
-                        .visit_seq(Some(len), Token::TupleVariantEnd, visitor)
-                } else {
-                    Err(unexpected(token))
-                }
+                assert_len_eq(len, enum_len)?;
+                self.de
+                    .visit_seq(Some(len), Token::TupleVariantEnd, visitor)
             }
             Token::Seq {
                 len: Some(enum_len),
             } => {
-                let token = self.de.next_token()?;
-
-                if len == enum_len {
-                    self.de.visit_seq(Some(len), Token::SeqEnd, visitor)
-                } else {
-                    Err(unexpected(token))
-                }
+                assert_len_eq(len, enum_len)?;
+                self.de.visit_seq(Some(len), Token::SeqEnd, visitor)
             }
-            _ => de::Deserializer::deserialize_any(self.de, visitor),
+            token => Err(unexpected(token)),
         }
     }
 
@@ -539,30 +835,20 @@ impl<'de> VariantAccess<'de> for DeserializerEnumVisitor<'_, 'de> {
     where
         V: Visitor<'de>,
     {
-        match self.de.peek_token()? {
+        match self.de.next_token()? {
             Token::StructVariant { len: enum_len, .. } => {
-                let token = self.de.next_token()?;
-
-                if fields.len() == enum_len {
-                    self.de
-                        .visit_map(Some(fields.len()), Token::StructVariantEnd, visitor)
-                } else {
-                    Err(unexpected(token))
-                }
+                assert_len_eq(fields.len(), enum_len)?;
+                self.de
+                    .visit_map(Some(fields.len()), Token::StructVariantEnd, visitor)
             }
             Token::Map {
                 len: Some(enum_len),
             } => {
-                let token = self.de.next_token()?;
-
-                if fields.len() == enum_len {
-                    self.de
-                        .visit_map(Some(fields.len()), Token::MapEnd, visitor)
-                } else {
-                    Err(unexpected(token))
-                }
+                assert_len_eq(fields.len(), enum_len)?;
+                self.de
+                    .visit_map(Some(fields.len()), Token::MapEnd, visitor)
             }
-            _ => de::Deserializer::deserialize_any(self.de, visitor),
+            token => Err(unexpected(token)),
         }
     }
 }
@@ -657,9 +943,214 @@ impl<'de> de::Deserializer<'de> for BytesDeserializer {
         visitor.visit_bytes(self.value)
     }
 
-    forward_to_deserialize_any! {
-        bool i8 i16 i32 i64 i128 u8 u16 u32 u64 u128 f32 f64 char str string
-        bytes byte_buf option unit unit_struct newtype_struct seq tuple
-        tuple_struct map struct enum identifier ignored_any
+    fn deserialize_bool<V>(self, _: V) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
+    {
+        Err(Error::custom("expected bytes but found bool"))
+    }
+
+    fn deserialize_i8<V>(self, _: V) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
+    {
+        Err(Error::custom("expected bytes but found i8"))
+    }
+
+    fn deserialize_i16<V>(self, _: V) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
+    {
+        Err(Error::custom("expected bytes but found i16"))
+    }
+
+    fn deserialize_i32<V>(self, _: V) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
+    {
+        Err(Error::custom("expected bytes but found i32"))
+    }
+
+    fn deserialize_i64<V>(self, _: V) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
+    {
+        Err(Error::custom("expected bytes but found i64"))
+    }
+
+    fn deserialize_u8<V>(self, _: V) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
+    {
+        Err(Error::custom("expected bytes but found u8"))
+    }
+
+    fn deserialize_u16<V>(self, _: V) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
+    {
+        Err(Error::custom("expected bytes but found u16"))
+    }
+
+    fn deserialize_u32<V>(self, _: V) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
+    {
+        Err(Error::custom("expected bytes but found u32"))
+    }
+
+    fn deserialize_u64<V>(self, _: V) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
+    {
+        Err(Error::custom("expected bytes but found u64"))
+    }
+
+    fn deserialize_f32<V>(self, _: V) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
+    {
+        Err(Error::custom("expected bytes but found f32"))
+    }
+
+    fn deserialize_f64<V>(self, _: V) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
+    {
+        Err(Error::custom("expected bytes but found f64"))
+    }
+
+    fn deserialize_char<V>(self, _: V) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
+    {
+        Err(Error::custom("expected bytes but found char"))
+    }
+
+    fn deserialize_str<V>(self, _: V) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
+    {
+        Err(Error::custom("expected bytes but found str"))
+    }
+
+    fn deserialize_string<V>(self, _: V) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
+    {
+        Err(Error::custom("expected bytes but found string"))
+    }
+
+    fn deserialize_bytes<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
+    {
+        visitor.visit_bytes(self.value)
+    }
+
+    fn deserialize_byte_buf<V>(self, _: V) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
+    {
+        Err(Error::custom("expected bytes but found byte_buf"))
+    }
+
+    fn deserialize_option<V>(self, _: V) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
+    {
+        Err(Error::custom("expected bytes but found option"))
+    }
+
+    fn deserialize_unit<V>(self, _: V) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
+    {
+        Err(Error::custom("expected bytes but found unit"))
+    }
+
+    fn deserialize_unit_struct<V>(self, _: &'static str, _: V) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
+    {
+        Err(Error::custom("expected bytes but found unit_struct"))
+    }
+
+    fn deserialize_newtype_struct<V>(self, _: &'static str, _: V) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
+    {
+        Err(Error::custom("expected bytes but found newtype_struct"))
+    }
+
+    fn deserialize_seq<V>(self, _: V) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
+    {
+        Err(Error::custom("expected bytes but found seq"))
+    }
+
+    fn deserialize_tuple<V>(self, _: usize, _: V) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
+    {
+        Err(Error::custom("expected bytes but found tuple"))
+    }
+
+    fn deserialize_tuple_struct<V>(
+        self,
+        _: &'static str,
+        _: usize,
+        _: V,
+    ) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
+    {
+        Err(Error::custom("expected bytes but found tuple_struct"))
+    }
+
+    fn deserialize_map<V>(self, _: V) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
+    {
+        Err(Error::custom("expected bytes but found map"))
+    }
+
+    fn deserialize_struct<V>(
+        self,
+        _: &'static str,
+        _: &'static [&'static str],
+        _: V,
+    ) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
+    {
+        Err(Error::custom("expected bytes but found struct"))
+    }
+
+    fn deserialize_enum<V>(
+        self,
+        _: &'static str,
+        _: &'static [&'static str],
+        _: V,
+    ) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
+    {
+        Err(Error::custom("expected bytes but found enum"))
+    }
+
+    fn deserialize_identifier<V>(self, _: V) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
+    {
+        Err(Error::custom("expected bytes but found identifier"))
+    }
+
+    fn deserialize_ignored_any<V>(self, _: V) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
+    {
+        Err(Error::custom("expected bytes but found ignored_any"))
     }
 }
