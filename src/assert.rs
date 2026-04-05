@@ -1,8 +1,10 @@
+use std::fmt::Debug;
+
+use serde::{Deserialize, Serialize};
+
 use crate::de::Deserializer;
 use crate::ser::Serializer;
 use crate::token::Token;
-use serde::{Deserialize, Serialize};
-use std::fmt::Debug;
 
 /// Runs both `assert_ser_tokens` and `assert_de_tokens`.
 ///
@@ -83,10 +85,11 @@ where
 /// `error`.
 ///
 /// ```
-/// use serde_derive::Serialize;
-/// use serde_test2::{assert_ser_tokens_error, Token};
 /// use std::sync::{Arc, Mutex};
 /// use std::thread;
+///
+/// use serde_derive::Serialize;
+/// use serde_test2::{assert_ser_tokens_error, Token};
 ///
 /// #[derive(Serialize)]
 /// struct Example {
@@ -208,10 +211,7 @@ where
 /// }
 ///
 /// assert_de_tokens_error::<S>(
-///     &[
-///         Token::Struct { name: "S", len: 2 },
-///         Token::Str("x"),
-///     ],
+///     &[Token::Struct { name: "S", len: 2 }, Token::Str("x")],
 ///     "unknown field `x`, expected `a` or `b`",
 /// );
 /// ```

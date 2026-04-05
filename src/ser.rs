@@ -1,6 +1,7 @@
+use serde::ser::{self, Serialize};
+
 use crate::error::Error;
 use crate::token::Token;
-use serde::ser::{self, Serialize};
 
 /// A `Serializer` that ensures that a value serializes to a given list of
 /// tokens.
@@ -322,8 +323,8 @@ impl<'s, 'a> ser::Serializer for &'s mut Serializer<'a> {
 
     fn is_human_readable(&self) -> bool {
         panic!(
-            "Types which have different human-readable and compact representations \
-             must explicitly mark their test cases with `serde_test2::Configure`"
+            "Types which have different human-readable and compact representations must \
+             explicitly mark their test cases with `serde_test2::Configure`"
         );
     }
 }

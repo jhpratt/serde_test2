@@ -1,12 +1,13 @@
 use std::fmt::Display;
 
-use crate::error::Error;
-use crate::token::Token;
 use serde::de::value::{MapAccessDeserializer, SeqAccessDeserializer};
 use serde::de::{
     self, Deserialize, DeserializeSeed, EnumAccess, Error as _, IntoDeserializer, MapAccess,
     SeqAccess, VariantAccess, Visitor,
 };
+
+use crate::error::Error;
+use crate::token::Token;
 
 #[derive(Debug)]
 pub(crate) struct Deserializer<'de> {
@@ -650,8 +651,8 @@ impl<'de> de::Deserializer<'de> for &mut Deserializer<'de> {
 
     fn is_human_readable(&self) -> bool {
         panic!(
-            "Types which have different human-readable and compact representations \
-             must explicitly mark their test cases with `serde_test2::Configure`"
+            "Types which have different human-readable and compact representations must \
+             explicitly mark their test cases with `serde_test2::Configure`"
         );
     }
 }

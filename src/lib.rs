@@ -106,13 +106,7 @@
 //! fn test_ser_de_empty() {
 //!     let map = LinkedHashMap::<char, u32>::new();
 //!
-//!     assert_tokens(
-//!         &map,
-//!         &[
-//!             Token::Map { len: Some(0) },
-//!             Token::MapEnd,
-//!         ],
-//!     );
+//!     assert_tokens(&map, &[Token::Map { len: Some(0) }, Token::MapEnd]);
 //! }
 //!
 //! #[test]

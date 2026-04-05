@@ -1,6 +1,7 @@
-use serde::{de, ser};
 use std::error;
 use std::fmt::{self, Display};
+
+use serde::{de, ser};
 
 #[derive(Clone, Debug)]
 pub(crate) struct Error {
