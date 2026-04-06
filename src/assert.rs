@@ -73,7 +73,7 @@ where
     let mut ser = Serializer::new(tokens);
     match value.serialize(&mut ser) {
         Ok(()) => {}
-        Err(err) => panic!("value failed to serialize: {}", err),
+        Err(err) => panic!("value failed to serialize: {err}"),
     }
 
     if ser.remaining() > 0 {
@@ -176,7 +176,7 @@ where
             assert_eq!(v, *value);
             v
         }
-        Err(e) => panic!("tokens failed to deserialize: {}", e),
+        Err(e) => panic!("tokens failed to deserialize: {e}"),
     };
     if de.remaining() > 0 {
         panic!("{} remaining tokens", de.remaining());
@@ -190,7 +190,7 @@ where
         Ok(()) => {
             assert_eq!(deserialized_val, *value);
         }
-        Err(e) => panic!("tokens failed to deserialize_in_place: {}", e),
+        Err(e) => panic!("tokens failed to deserialize_in_place: {e}"),
     }
     if de.remaining() > 0 {
         panic!("{} remaining tokens", de.remaining());

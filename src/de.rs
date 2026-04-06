@@ -18,20 +18,17 @@ fn assert_next_token(de: &mut Deserializer, expected: Token) -> Result<(), Error
     match de.next_token_opt() {
         Some(token) if token == expected => Ok(()),
         Some(other) => Err(de::Error::custom(format!(
-            "expected Token::{} but deserialization wants Token::{}",
-            other, expected,
+            "expected Token::{other} but deserialization wants Token::{expected}",
         ))),
         None => Err(de::Error::custom(format!(
-            "end of tokens but deserialization wants Token::{}",
-            expected,
+            "end of tokens but deserialization wants Token::{expected}",
         ))),
     }
 }
 
 fn unexpected(token: Token) -> Error {
     de::Error::custom(format!(
-        "deserialization did not expect this token: {}",
-        token,
+        "deserialization did not expect this token: {token}"
     ))
 }
 
@@ -43,8 +40,7 @@ fn assert_name_eq(expected: impl Display, actual: impl Display) -> Result<(), Er
         Ok(())
     } else {
         Err(de::Error::custom(format!(
-            "expected name `{}` but got `{}`",
-            expected, actual
+            "expected name `{expected}` but got `{actual}`"
         )))
     }
 }
@@ -54,8 +50,7 @@ fn assert_len_eq(expected: usize, actual: usize) -> Result<(), Error> {
         Ok(())
     } else {
         Err(de::Error::custom(format!(
-            "expected length {} but got {}",
-            expected, actual
+            "expected length {expected} but got {actual}"
         )))
     }
 }
@@ -77,7 +72,7 @@ fn assert_contains(expected: &[&str], actual: &str, token: Token) -> Result<(), 
                         if i > 0 {
                             formatter.write_str(", ")?;
                         }
-                        write!(formatter, "`{}`", alt)?;
+                        write!(formatter, "`{alt}`")?;
                     }
                     Ok(())
                 }
