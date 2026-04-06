@@ -1,4 +1,7 @@
-use serde::ser::{self, Serialize};
+use alloc::format;
+use alloc::string::String;
+
+use serde_core::ser::{self, Serialize};
 
 use crate::error::Error;
 use crate::token::Token;
@@ -46,7 +49,7 @@ macro_rules! assert_next_token {
     ($ser:expr, $actual:ident { $($k:ident),* }) => {{
         let compare = ($($k,)*);
         let field_format = || {
-            use std::fmt::Write;
+            use core::fmt::Write;
             let mut buffer = String::new();
             $(
                 write!(&mut buffer, concat!(stringify!($k), ": {:?}, "), $k).unwrap();

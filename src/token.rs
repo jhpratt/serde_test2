@@ -1,6 +1,6 @@
-use std::fmt::{self, Debug, Display};
+use core::fmt::{self, Debug, Display};
 
-use serde::de::Unexpected;
+use serde_core::de::Unexpected;
 
 #[non_exhaustive]
 #[derive(Copy, Clone, PartialEq, Debug)]

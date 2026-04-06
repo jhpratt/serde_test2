@@ -1,10 +1,12 @@
-use std::fmt::{self, Display};
+use alloc::string::String;
+use alloc::vec::Vec;
+use core::fmt::{self, Display};
 
-use serde::de::{
+use serde_core::de::{
     Deserialize, DeserializeSeed, Deserializer, EnumAccess, Error, MapAccess, SeqAccess,
     VariantAccess, Visitor,
 };
-use serde::ser::{
+use serde_core::ser::{
     Serialize, SerializeMap, SerializeSeq, SerializeStruct, SerializeStructVariant, SerializeTuple,
     SerializeTupleStruct, SerializeTupleVariant, Serializer,
 };
@@ -18,7 +20,7 @@ pub struct Compact<T: ?Sized>(T);
 /// compact form.
 ///
 /// ```
-/// use serde::{Deserialize, Deserializer, Serialize, Serializer};
+/// use serde_core::{Deserialize, Deserializer, Serialize, Serializer};
 /// use serde_test2::{assert_tokens, Configure, Token};
 ///
 /// #[derive(Debug, PartialEq)]
@@ -42,7 +44,7 @@ pub struct Compact<T: ?Sized>(T);
 ///     where
 ///         D: Deserializer<'de>,
 ///     {
-///         use serde::de::Error;
+///         use serde_core::de::Error;
 ///         if deserializer.is_human_readable() {
 ///             let s = String::deserialize(deserializer)?;
 ///             let parts: Vec<_> = s.split('.').collect();

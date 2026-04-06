@@ -1,8 +1,8 @@
 //! This crate provides a convenient concise way to write unit tests for
 //! implementations of [`Serialize`] and [`Deserialize`].
 //!
-//! [`Serialize`]: serde::ser::Serialize
-//! [`Deserialize`]: serde::de::Deserialize
+//! [`Serialize`]: serde_core::ser::Serialize
+//! [`Deserialize`]: serde_core::de::Deserialize
 //!
 //! The `Serialize` impl for a value can be characterized by the sequence of
 //! [`Serializer`] calls that are made in the course of serializing the value,
@@ -14,7 +14,7 @@
 //! test both directions. There are also functions to test expected failure
 //! conditions.
 //!
-//! [`Serializer`]: serde::ser::Serializer
+//! [`Serializer`]: serde_core::ser::Serializer
 //!
 //! Here is an example from the [`linked-hash-map`] crate.
 //!
@@ -29,8 +29,8 @@
 //! # use std::fmt;
 //! # use std::marker::PhantomData;
 //! #
-//! # use serde::ser::{Serialize, Serializer, SerializeMap};
-//! # use serde::de::{Deserialize, Deserializer, Visitor, MapAccess};
+//! # use serde_core::ser::{Serialize, Serializer, SerializeMap};
+//! # use serde_core::de::{Deserialize, Deserializer, Visitor, MapAccess};
 //! #
 //! # // Dumb imitation of LinkedHashMap.
 //! # #[derive(PartialEq, Debug)]
@@ -138,6 +138,7 @@
 //! # }
 //! ```
 
+#![no_std]
 #![warn(clippy::all, clippy::pedantic, unreachable_pub)]
 #![allow(
     clippy::test_attr_in_doctest,
@@ -150,6 +151,10 @@
     clippy::too_many_lines,
     clippy::redundant_pub_crate
 )]
+
+extern crate alloc;
+#[cfg(feature = "std")]
+extern crate std;
 
 mod assert;
 mod configure;

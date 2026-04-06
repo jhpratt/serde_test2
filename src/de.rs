@@ -1,7 +1,10 @@
-use std::fmt::Display;
+use alloc::borrow::ToOwned as _;
+use alloc::format;
+use alloc::string::ToString as _;
+use core::fmt::Display;
 
-use serde::de::value::{MapAccessDeserializer, SeqAccessDeserializer};
-use serde::de::{
+use serde_core::de::value::{MapAccessDeserializer, SeqAccessDeserializer};
+use serde_core::de::{
     self, Deserialize, DeserializeSeed, EnumAccess, Error as _, IntoDeserializer, MapAccess,
     SeqAccess, VariantAccess, Visitor,
 };
@@ -60,7 +63,7 @@ fn assert_contains(expected: &[&str], actual: &str, token: Token) -> Result<(), 
         names: &'a [&'b str],
     }
 
-    impl serde::de::Expected for OneOf<'_, '_> {
+    impl serde_core::de::Expected for OneOf<'_, '_> {
         fn fmt(&self, formatter: &mut core::fmt::Formatter) -> core::fmt::Result {
             match self.names.len() {
                 0 => panic!(), // special case elsewhere

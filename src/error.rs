@@ -1,7 +1,9 @@
+use alloc::string::{String, ToString as _};
+use core::fmt::{self, Display};
+#[cfg(feature = "std")]
 use std::error;
-use std::fmt::{self, Display};
 
-use serde::{de, ser};
+use serde_core::{de, ser};
 
 #[derive(Clone, Debug)]
 pub(crate) struct Error {
@@ -30,6 +32,7 @@ impl fmt::Display for Error {
     }
 }
 
+#[cfg(feature = "std")]
 impl error::Error for Error {}
 
 impl PartialEq<str> for Error {

@@ -1,6 +1,6 @@
-use std::fmt::Debug;
+use core::fmt::Debug;
 
-use serde::{Deserialize, Serialize};
+use serde_core::{Deserialize, Serialize};
 
 use crate::de::Deserializer;
 use crate::ser::Serializer;
@@ -85,44 +85,36 @@ where
 /// `error`.
 ///
 /// ```
-/// use std::sync::{Arc, Mutex};
-/// use std::thread;
-///
-/// use serde_derive::Serialize;
-/// use serde_test2::{assert_ser_tokens_error, Token};
-///
+/// # use serde_test2::{assert_ser_tokens_error, Token};
+/// # use serde::ser::SerializeStruct;
+/// # use serde_derive::Serialize;
+/// #
 /// #[derive(Serialize)]
 /// struct Example {
-///     lock: Arc<Mutex<u32>>,
+///     inner: FailsToSerialize,
+/// }
+/// struct FailsToSerialize;
+///
+/// impl serde::ser::Serialize for FailsToSerialize {
+///     fn serialize<S>(&self, _serializer: S) -> Result<S::Ok, S::Error>
+///     where
+///         S: serde::Serializer,
+///     {
+///         Err(serde::ser::Error::custom("uh oh!"))
+///     }
 /// }
 ///
-/// fn main() {
-///     let example = Example {
-///         lock: Arc::new(Mutex::new(0)),
-///     };
-///     let lock = example.lock.clone();
-///
-///     let thread = thread::spawn(move || {
-///         // This thread will acquire the mutex first, unwrapping the result
-///         // of `lock` because the lock has not been poisoned.
-///         let _guard = lock.lock().unwrap();
-///
-///         // This panic while holding the lock (`_guard` is in scope) will
-///         // poison the mutex.
-///         panic!()
-///     });
-///     thread.join();
-///
-///     let expected = &[
-///         Token::Struct {
-///             name: "Example",
-///             len: 1,
-///         },
-///         Token::Str("lock"),
-///     ];
-///     let error = "lock poison error while serializing";
-///     assert_ser_tokens_error(&example, expected, error);
-/// }
+/// let example = Example {
+///     inner: FailsToSerialize,
+/// };
+/// let expected = &[
+///     Token::Struct {
+///         name: "Example",
+///         len: 1,
+///     },
+///     Token::Str("inner"),
+/// ];
+/// assert_ser_tokens_error(&example, expected, "uh oh!");
 /// ```
 #[track_caller]
 pub fn assert_ser_tokens_error<T>(value: &T, tokens: &[Token], error: &str)
