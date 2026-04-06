@@ -612,14 +612,16 @@ impl Token {
             | Token::Struct { .. }
             | Token::Tuple { .. }
             | Token::TupleStruct { .. } => Unexpected::Seq,
-            Token::SeqEnd | Token::TupleEnd | Token::TupleStructEnd => todo!(),
+            Token::SeqEnd => Unexpected::Other("end of sequence"),
+            Token::TupleEnd => Unexpected::Other("end of tuple"),
+            Token::TupleStructEnd => Unexpected::Other("end of tuple struct"),
             Token::TupleVariant { .. } => Unexpected::TupleVariant,
-            Token::TupleVariantEnd => todo!(),
+            Token::TupleVariantEnd => Unexpected::Other("end of tuple variant"),
             Token::Map { .. } => Unexpected::Map,
-            Token::MapEnd => todo!(),
-            Token::StructEnd => todo!(),
+            Token::MapEnd => Unexpected::Other("end of map"),
+            Token::StructEnd => Unexpected::Other("end of struct"),
             Token::StructVariant { .. } => Unexpected::StructVariant,
-            Token::StructVariantEnd => todo!(),
+            Token::StructVariantEnd => Unexpected::Other("end of struct variant"),
             Token::Enum { .. } => Unexpected::Enum,
         }
     }
