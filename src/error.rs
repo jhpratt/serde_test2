@@ -30,11 +30,7 @@ impl fmt::Display for Error {
     }
 }
 
-impl error::Error for Error {
-    fn description(&self) -> &str {
-        &self.msg
-    }
-}
+impl error::Error for Error {}
 
 impl PartialEq<str> for Error {
     fn eq(&self, other: &str) -> bool {
