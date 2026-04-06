@@ -15,6 +15,9 @@ repository = "https://github.com/jhpratt/serde_test2"
 rust-version = "1.61.0"
 
 [features]
+# Most situations will want `std` and the error isn't immediately obvious when it's disabled, so
+# make it the default.
+default = ["std"]
 std = ["serde_core/std"]
 
 [dependencies]
