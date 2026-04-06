@@ -1,6 +1,6 @@
 [package]
 name = "serde_test2"
-version = "1.0.177"
+version = "2.0.0"
 authors = [
     "Erick Tryzelaar <erick.tryzelaar@gmail.com>",
     "David Tolnay <dtolnay@gmail.com>",

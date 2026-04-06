@@ -51,7 +51,7 @@ dependencies = [
 
 [[package]]
 name = "serde_test2"
-version = "1.0.177"
+version = "2.0.0"
 dependencies = [
  "serde",
  "serde_core",
