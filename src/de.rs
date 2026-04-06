@@ -60,18 +60,38 @@ fn assert_len_eq(expected: usize, actual: usize) -> Result<(), Error> {
     }
 }
 
-fn assert_contains(expected: &[impl Display], actual: impl Display) -> Result<(), Error> {
-    let expected = expected.iter().map(ToString::to_string).collect::<Vec<_>>();
-    let actual = actual.to_string();
+fn assert_contains(expected: &[&str], actual: &str, token: Token) -> Result<(), Error> {
+    struct OneOf<'a, 'b> {
+        names: &'a [&'b str],
+    }
+
+    impl serde::de::Expected for OneOf<'_, '_> {
+        fn fmt(&self, formatter: &mut core::fmt::Formatter) -> core::fmt::Result {
+            match self.names.len() {
+                0 => panic!(), // special case elsewhere
+                1 => write!(formatter, "`{}`", self.names[0]),
+                2 => write!(formatter, "`{}` or `{}`", self.names[0], self.names[1]),
+                _ => {
+                    formatter.write_str("one of ")?;
+                    for (i, alt) in self.names.iter().enumerate() {
+                        if i > 0 {
+                            formatter.write_str(", ")?;
+                        }
+                        write!(formatter, "`{}`", alt)?;
+                    }
+                    Ok(())
+                }
+            }
+        }
+    }
 
     if expected.contains(&actual) {
         Ok(())
     } else {
-        Err(de::Error::custom(format!(
-            "expected one of [{}] but got `{}`",
-            expected.join(", "),
-            actual
-        )))
+        Err(de::Error::invalid_value(
+            token.into_unexpected(),
+            &OneOf { names: expected },
+        ))
     }
 }
 
@@ -282,7 +302,7 @@ impl<'de> de::Deserializer<'de> for &mut Deserializer<'de> {
                 assert_name_eq(name, n)?;
                 visitor.visit_enum(DeserializerEnumVisitor { de: self })
             }
-            Token::UnitVariant {
+            token @ (Token::UnitVariant {
                 name: n,
                 variant_index: _,
                 variant,
@@ -297,9 +317,9 @@ impl<'de> de::Deserializer<'de> for &mut Deserializer<'de> {
                 name: n,
                 variant,
                 len: _,
-            } => {
+            }) => {
                 assert_name_eq(name, n)?;
-                assert_contains(variants, variant)?;
+                assert_contains(variants, variant, token)?;
                 visitor.visit_enum(DeserializerEnumVisitor { de: self })
             }
             token => Err(de::Error::invalid_type(token.into_unexpected(), &visitor)),
