@@ -300,8 +300,7 @@ pub enum Token {
 
     /// The header to a sequence.
     ///
-    /// After this header are the elements of the sequence, followed by
-    /// `SeqEnd`.
+    /// After this header are the elements of the sequence, followed by `SeqEnd`.
     ///
     /// ```
     /// # use serde_test2::{assert_tokens, Token};
@@ -348,8 +347,7 @@ pub enum Token {
 
     /// The header to a tuple struct.
     ///
-    /// After this header are the fields of the tuple struct, followed by
-    /// `TupleStructEnd`.
+    /// After this header are the fields of the tuple struct, followed by `TupleStructEnd`.
     ///
     /// ```
     /// # use serde_derive::{Deserialize, Serialize};
@@ -378,8 +376,7 @@ pub enum Token {
 
     /// The header to a tuple variant of an enum.
     ///
-    /// After this header are the fields of the tuple variant, followed by
-    /// `TupleVariantEnd`.
+    /// After this header are the fields of the tuple variant, followed by `TupleVariantEnd`.
     ///
     /// ```
     /// # use serde_derive::{Deserialize, Serialize};
@@ -482,8 +479,7 @@ pub enum Token {
 
     /// The header of a struct variant of an enum.
     ///
-    /// After this header are the fields of the struct variant, followed by
-    /// `StructVariantEnd`.
+    /// After this header are the fields of the struct variant, followed by `StructVariantEnd`.
     ///
     /// ```
     /// # use serde_derive::{Deserialize, Serialize};

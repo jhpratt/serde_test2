@@ -16,8 +16,7 @@ pub struct Readable<T: ?Sized>(T);
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Compact<T: ?Sized>(T);
 
-/// Trait to determine whether a value is represented in human-readable or
-/// compact form.
+/// Trait to determine whether a value is represented in human-readable or compact form.
 ///
 /// ```
 /// use serde_core::{Deserialize, Deserializer, Serialize, Serializer};

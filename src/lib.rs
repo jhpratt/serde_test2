@@ -1,18 +1,16 @@
-//! This crate provides a convenient concise way to write unit tests for
-//! implementations of [`Serialize`] and [`Deserialize`].
+//! This crate provides a convenient concise way to write unit tests for implementations of
+//! [`Serialize`] and [`Deserialize`].
 //!
 //! [`Serialize`]: serde_core::ser::Serialize
 //! [`Deserialize`]: serde_core::de::Deserialize
 //!
-//! The `Serialize` impl for a value can be characterized by the sequence of
-//! [`Serializer`] calls that are made in the course of serializing the value,
-//! so `serde_test2` provides a [`Token`] abstraction which corresponds roughly
-//! to `Serializer` method calls. There is an [`assert_ser_tokens`] function to
-//! test that a value serializes to a particular sequence of method calls, an
-//! [`assert_de_tokens`] function to test that a value can be deserialized from
-//! a particular sequence of method calls, and an [`assert_tokens`] function to
-//! test both directions. There are also functions to test expected failure
-//! conditions.
+//! The `Serialize` impl for a value can be characterized by the sequence of [`Serializer`] calls
+//! that are made in the course of serializing the value, so `serde_test2` provides a [`Token`]
+//! abstraction which corresponds roughly to `Serializer` method calls. There is an
+//! [`assert_ser_tokens`] function to test that a value serializes to a particular sequence of
+//! method calls, an [`assert_de_tokens`] function to test that a value can be deserialized from a
+//! particular sequence of method calls, and an [`assert_tokens`] function to test both directions.
+//! There are also functions to test expected failure conditions.
 //!
 //! [`Serializer`]: serde_core::ser::Serializer
 //!

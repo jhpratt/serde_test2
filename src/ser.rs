@@ -6,8 +6,7 @@ use serde_core::ser::{self, Serialize};
 use crate::error::Error;
 use crate::token::Token;
 
-/// A `Serializer` that ensures that a value serializes to a given list of
-/// tokens.
+/// A `Serializer` that ensures that a value serializes to a given list of tokens.
 #[derive(Debug)]
 pub(crate) struct Serializer<'a> {
     tokens: &'a [Token],
