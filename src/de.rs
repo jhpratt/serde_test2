@@ -1,7 +1,6 @@
 use alloc::borrow::ToOwned as _;
 use alloc::format;
 use alloc::string::ToString as _;
-use core::fmt::Display;
 
 use serde_core::de::value::{MapAccessDeserializer, SeqAccessDeserializer};
 use serde_core::de::{
@@ -35,10 +34,7 @@ fn unexpected(token: Token) -> Error {
     ))
 }
 
-fn assert_name_eq(expected: impl Display, actual: impl Display) -> Result<(), Error> {
-    let expected = expected.to_string();
-    let actual = actual.to_string();
-
+fn assert_name_eq(expected: &str, actual: &str) -> Result<(), Error> {
     if expected == actual {
         Ok(())
     } else {
