@@ -331,7 +331,7 @@ impl<'s, 'a> ser::Serializer for &'s mut Serializer<'a> {
     }
 }
 
-pub(crate) struct Variant<'s, 'a: 's> {
+pub(crate) struct Variant<'s, 'a> {
     ser: &'s mut Serializer<'a>,
     end: Token,
 }

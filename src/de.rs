@@ -16,7 +16,7 @@ pub(crate) struct Deserializer<'de> {
     tokens: &'de [Token],
 }
 
-fn assert_next_token(de: &mut Deserializer, expected: Token) -> Result<(), Error> {
+fn assert_next_token(de: &mut Deserializer<'_>, expected: Token) -> Result<(), Error> {
     match de.next_token_opt() {
         Some(token) if token == expected => Ok(()),
         Some(other) => Err(de::Error::custom(format!(
@@ -60,7 +60,7 @@ fn assert_contains(expected: &[&str], actual: &str, token: Token) -> Result<(), 
     }
 
     impl serde_core::de::Expected for OneOf<'_, '_> {
-        fn fmt(&self, formatter: &mut core::fmt::Formatter) -> core::fmt::Result {
+        fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
             match self.names.len() {
                 0 => panic!(), // special case elsewhere
                 1 => write!(formatter, "`{}`", self.names[0]),
@@ -673,7 +673,7 @@ impl<'de> de::Deserializer<'de> for &mut Deserializer<'de> {
 
 //////////////////////////////////////////////////////////////////////////
 
-struct DeserializerSeqVisitor<'a, 'de: 'a> {
+struct DeserializerSeqVisitor<'a, 'de> {
     de: &'a mut Deserializer<'de>,
     len: Option<usize>,
     end: Token,
@@ -700,7 +700,7 @@ impl<'de> SeqAccess<'de> for DeserializerSeqVisitor<'_, 'de> {
 
 //////////////////////////////////////////////////////////////////////////
 
-struct DeserializerMapVisitor<'a, 'de: 'a> {
+struct DeserializerMapVisitor<'a, 'de> {
     de: &'a mut Deserializer<'de>,
     len: Option<usize>,
     end: Token,
@@ -735,7 +735,7 @@ impl<'de> MapAccess<'de> for DeserializerMapVisitor<'_, 'de> {
 //////////////////////////////////////////////////////////////////////////
 
 #[derive(Debug)]
-struct DeserializerEnumVisitor<'a, 'de: 'a> {
+struct DeserializerEnumVisitor<'a, 'de> {
     de: &'a mut Deserializer<'de>,
 }
 
@@ -870,7 +870,7 @@ impl<'de> VariantAccess<'de> for DeserializerEnumVisitor<'_, 'de> {
 
 //////////////////////////////////////////////////////////////////////////
 
-struct EnumMapVisitor<'a, 'de: 'a> {
+struct EnumMapVisitor<'a, 'de> {
     de: &'a mut Deserializer<'de>,
     variant: Option<Token>,
     format: EnumFormat,

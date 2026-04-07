@@ -574,7 +574,7 @@ pub enum Token {
 }
 
 impl Display for Token {
-    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         Debug::fmt(self, formatter)
     }
 }

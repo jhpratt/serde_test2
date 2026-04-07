@@ -658,7 +658,7 @@ macro_rules! impl_deserializer {
         {
             type Value = D::Value;
 
-            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+            fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
                 self.0.expecting(formatter)
             }
 

@@ -137,7 +137,7 @@
 //! ```
 
 #![no_std]
-#![warn(clippy::all, clippy::pedantic, unreachable_pub)]
+#![warn(clippy::all, clippy::pedantic, unreachable_pub, rust_2018_idioms)]
 #![allow(
     clippy::test_attr_in_doctest,
     clippy::float_cmp,
